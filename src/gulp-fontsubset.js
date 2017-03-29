@@ -6,12 +6,27 @@
 import through from 'through2'
 import Fontmin from 'fontmin'
 import path    from 'path'
+import css     from 'css'
+
+export const BUILT_IN_PRESETS = {
+  html : file => file.contents.toString().replace(/<([^>]+)>/ig, ''),
+  css  : file => css.parse(file.contents.toString()).stylesheet.rules
+    .map(x => x.declarations)
+    .reduce((prev, declarations) => prev.concat(declarations), []) // flatten
+    .filter(x => x.property === 'content')
+    .map(x => x.value)
+    .map(x => (x[0] === '\'' && x[x.length - 1] === '\'') ||
+              (x[0] === '"' && x[x.length - 1] === '"') ?
+                x.split('').splice(1, x.length - 2).join('') : x
+    ) // unwrap quotes
+    .join('')
+}
 
 /**
- * wnew csv2json
+ * gulp-fontsubset
  * @return {Stream} [description]
  */
-export default function({ text, pattern, formats } = {}) {
+export default function({ text, pattern, formats, presets } = {}) {
 
   /**
    * store processing objects
@@ -23,12 +38,15 @@ export default function({ text, pattern, formats } = {}) {
   }
 
   const PATTERN_DEFAULT = {
-    html: /^.+\.html$/,
-    font: /^.+\.ttf$/,
+    html : /^.+\.html$/,
+    css  : /^.+\.css$/,
+    font : /^.+\.ttf$/,
   }
   const PATTERN = { ...PATTERN_DEFAULT, ...pattern }
 
   const FORMATS = formats ? formats : ['ttf']
+
+  const PRESETS = presets ? presets : ['html']
 
   /**
    * Transform
@@ -39,10 +57,17 @@ export default function({ text, pattern, formats } = {}) {
    */
   function transform(file, encode, callback) {
 
-    if (PATTERN.html.test(file.path)) {
-      store.text += file.contents.toString()
-        .replace(/<([^>]+)>/ig, '') // strip leftover tags
-    } else if (PATTERN.font.test(file.path)) {
+    PRESETS.forEach(preset => {
+      if (PATTERN.html.test(file.path)) {
+        if (typeof preset === 'string') {
+          store.text += BUILT_IN_PRESETS[preset](file)
+        } else if (typeof preset === 'function') {
+          store.text += preset(file)
+        }
+      }
+    })
+
+    if (PATTERN.font.test(file.path)) {
       store.fonts.push(file)
     }
     return callback()
