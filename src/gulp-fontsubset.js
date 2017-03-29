@@ -3,8 +3,9 @@
  * @file
  */
 
-import through  from 'through2'
-import Fontmin  from 'fontmin'
+import through from 'through2'
+import Fontmin from 'fontmin'
+import path    from 'path'
 
 /**
  * wnew csv2json
@@ -40,8 +41,7 @@ export default function({ text, pattern, formats } = {}) {
 
     if (PATTERN.html.test(file.path)) {
       store.text += file.contents.toString()
-        .replace(/<([^>]+)>/ig, '\n') // strip leftover tags
-        .replace(/\n\s*\n/g, '\n\n')  // collapse multiple newlines
+        .replace(/<([^>]+)>/ig, '') // strip leftover tags
     } else if (PATTERN.font.test(file.path)) {
       store.fonts.push(file)
     }
@@ -54,28 +54,47 @@ export default function({ text, pattern, formats } = {}) {
    * @return {void}
    */
   function flush(callback) {
-    Promise.all(FORMATS.map(format => new Promise((resolve, reject) => {
-      store.fonts.forEach(font => {
-        new Fontmin()
-          .src(font.contents) // input as a buffer
-          .use(Fontmin.glyph({ text: store.text }))
-          .run((err, font) => {
-            if (err) {
-              reject()
-            } else {
-              font.path = store.fonts[0].path
-              this.push(font)
-              resolve()
-            }
-          })
-      })
 
-    })
-  ))
-    .then(() => {
-      callback()
-    })
-    .catch(err => console.log(err))
+    // generate all combination
+    const params = []
+    FORMATS.forEach(format => store.fonts.forEach(font => params.push({ format, font })))
+
+    Promise.all(params.map(({ format, font }) => new Promise((resolve, reject) => {
+      const input = new Fontmin().src(font.contents) // as buffer
+
+      let middle
+      switch (format) {
+        case 'eot':
+          middle = input.use(Fontmin.ttf2eot())
+          break
+        case 'svg':
+          middle = input.use(Fontmin.ttf2svg())
+          break
+        case 'woff':
+          middle = input.use(Fontmin.ttf2woff())
+          break
+        case 'ttf':
+          middle = input
+      }
+
+      middle
+        .use(Fontmin.glyph({ text: store.text }))
+        .run((err, font) => {
+          if (err) {
+            reject()
+          } else {
+            const { dir, name } = path.parse(store.fonts[0].path)
+            font.path = `${dir}/${name}.${format}`
+            resolve(font)
+          }
+        })
+
+    })))
+      .then(fonts => {
+        fonts.forEach(font => this.push(font))
+        callback()
+      })
+      .catch(err => console.log(err))
   }
 
   return through.obj(transform, flush)

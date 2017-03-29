@@ -78,7 +78,7 @@ describe('gulp-fontsubset', () => {
       ])
       .pipe(subset({ pattern: { html: /^.+\._html$/, font: /^.+\._ttf$/ } }))
       .pipe(assert.length(1))
-      .pipe(assert.first(file => expect(file.path).toBe(__dirname + '/fixtures/testFont._ttf')))
+      .pipe(assert.first(file => expect(file.path).toBe(__dirname + '/fixtures/testFont.ttf')))
       .pipe(assert.first(file => expect(file[0].contents.length).toBeLessThan(4584 - 500))) // saving 500 bytes might be reasonable
       .pipe(assert.end(done))
     })
