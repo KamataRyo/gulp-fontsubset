@@ -90,7 +90,7 @@ describe('gulp-fontsubset', () => {
       ])
       .pipe(subset({ pattern: { html: /^.+\._html$/, font: /^.+\._ttf$/ } }))
       .pipe(assert.length(1))
-      .pipe(assert.first(file => expect(file.path).toBe(__dirname + '/fixtures/testFont1.ttf')))
+      .pipe(assert.first(file => expect(file.path).toBe(__dirname + '/fixtures/testFont.ttf')))
       .pipe(assert.first(file => expect(file[0].contents.length).toBeLessThan(4584 - 500))) // saving 500 bytes might be reasonable
       .pipe(assert.end(done))
     })
@@ -104,10 +104,10 @@ describe('gulp-fontsubset', () => {
       ])
       .pipe(subset({ formats: ['eot', 'ttf', 'svg', 'woff'] }))
       .pipe(assert.length(4))
-      .pipe(assert.nth(0, file => expect(file.path).toBe(__dirname + '/fixtures/testFont.eot')))
+      .pipe(assert.nth(0, file => expect(file.path).toBe(__dirname + '/fixtures/testFont1.eot')))
       .pipe(assert.nth(1, file => expect(file.path).toBe(__dirname + '/fixtures/testFont1.ttf')))
-      .pipe(assert.nth(2, file => expect(file.path).toBe(__dirname + '/fixtures/testFont.svg')))
-      .pipe(assert.nth(3, file => expect(file.path).toBe(__dirname + '/fixtures/testFont.woff')))
+      .pipe(assert.nth(2, file => expect(file.path).toBe(__dirname + '/fixtures/testFont1.svg')))
+      .pipe(assert.nth(3, file => expect(file.path).toBe(__dirname + '/fixtures/testFont1.woff')))
       .pipe(assert.end(done))
     })
 
