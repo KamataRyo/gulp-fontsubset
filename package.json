@@ -1,6 +1,6 @@
 {
   "name": "gulp-fontsubset",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "gulp-fontsubset is a gulp plugin to generate subsets of ttf fonts.",
   "main": "lib/gulp-fontsubset.js",
   "files": [

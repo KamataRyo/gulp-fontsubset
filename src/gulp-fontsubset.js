@@ -18,7 +18,7 @@ export default function({ text, pattern, formats } = {}) {
    * @type {Object}
    */
   const store = {
-    text: text ? text : '', // store given text string
+    text: text ? text + '' : '', // store given text string
     fonts: []
   }
 
@@ -59,42 +59,53 @@ export default function({ text, pattern, formats } = {}) {
     const params = []
     FORMATS.forEach(format => store.fonts.forEach(font => params.push({ format, font })))
 
+    // nothing to process
+    if (params.length == 0) { return callback() }
+
     Promise.all(params.map(({ format, font }) => new Promise((resolve, reject) => {
+
       const input = new Fontmin().src(font.contents) // as buffer
 
-      let middle
+      let presubset
       switch (format) {
         case 'eot':
-          middle = input.use(Fontmin.ttf2eot())
+          presubset = input.use(Fontmin.ttf2eot())
           break
         case 'svg':
-          middle = input.use(Fontmin.ttf2svg())
+          presubset = input.use(Fontmin.ttf2svg())
           break
         case 'woff':
-          middle = input.use(Fontmin.ttf2woff())
+          presubset = input.use(Fontmin.ttf2woff())
           break
         case 'ttf':
-          middle = input
+          presubset = input
+          break
+        default:
+          presubset = null
       }
 
-      middle
+      presubset ? presubset
         .use(Fontmin.glyph({ text: store.text }))
         .run((err, font) => {
           if (err) {
-            reject()
+            reject(err)
           } else {
             const { dir, name } = path.parse(store.fonts[0].path)
             font.path = `${dir}/${name}.${format}`
             resolve(font)
           }
-        })
+        }) : resolve(null)
 
     })))
       .then(fonts => {
-        fonts.forEach(font => this.push(font))
+        fonts.forEach(font => font && this.push(font))
         callback()
       })
-      .catch(err => console.log(err))
+      .catch(err => {
+        // TODO: replace with gulp-utils
+        console.log(err)
+        callback()
+      })
   }
 
   return through.obj(transform, flush)

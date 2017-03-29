@@ -98,5 +98,15 @@ describe('gulp-fontsubset', () => {
       .pipe(assert.nth(3, file => expect(file.path).toBe(__dirname + '/fixtures/testFont.woff')))
       .pipe(assert.end(done))
     })
+
+    it('should return nothing with invalid formats', done => {
+      gulp.src([
+        __dirname + '/fixtures/test.html', // 5 chars
+        __dirname + '/fixtures/testFont.ttf', // length = 4584, 10 chars
+      ])
+      .pipe(subset({ formats: ['invalid', 'fontfile', 'format', 'given'] }))
+      .pipe(assert.length(0))
+      .pipe(assert.end(done))
+    })
   })
 })
