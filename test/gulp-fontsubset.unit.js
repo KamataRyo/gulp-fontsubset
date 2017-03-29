@@ -29,7 +29,7 @@ describe('gulp-fontsubset', () => {
     })
   })
 
-  describe('with single html', () => {
+  describe('with html', () => {
     it('should return a ttf if given a ttf and html', done => {
       gulp.src([
         __dirname + '/fixtures/testFont.ttf', // length = 4584, 10 chars
@@ -53,9 +53,7 @@ describe('gulp-fontsubset', () => {
       .pipe(assert.first(file => expect(file[0].contents.length).toBeLessThan(4584 - 500))) // saving 500 bytes might be reasonable
       .pipe(assert.end(done))
     })
-  })
 
-  describe('with several html', () => {
     it('should return a ttf if given a ttf and several html', done => {
       gulp.src([
         __dirname + '/fixtures/testFont.ttf', // length = 4584, 10 chars
@@ -66,6 +64,20 @@ describe('gulp-fontsubset', () => {
         .pipe(assert.length(1))
         .pipe(assert.first(file => expect(file.path).toBe(__dirname + '/fixtures/testFont.ttf')))
         .pipe(assert.first(file => expect(file[0].contents.length).toBeLessThan(4584 - 250))) // saving 250 bytes might be reasonable
+        .pipe(assert.end(done))
+    })
+  })
+
+  describe('with css', () => {
+    it('should return a ttf if given a ttf and a css', done => {
+      gulp.src([
+        __dirname + '/fixtures/testFont.ttf', // length = 4584, 10 chars
+        __dirname + '/fixtures/test.css' // 3 chars
+      ])
+        .pipe(subset())
+        .pipe(assert.length(1))
+        .pipe(assert.first(file => expect(file.path).toBe(__dirname + '/fixtures/testFont.ttf')))
+        .pipe(assert.first(file => expect(file[0].contents.length).toBeLessThan(4584 - 1500))) // saving 1500 bytes might be reasonable
         .pipe(assert.end(done))
     })
   })

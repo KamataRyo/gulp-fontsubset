@@ -22,6 +22,12 @@ export const BUILT_IN_PRESETS = {
     .join('')
 }
 
+export const PATTERN_DEFAULT = {
+  html : /^.+\.html$/,
+  css  : /^.+\.css$/,
+  font : /^.+\.ttf$/,
+}
+
 /**
  * gulp-fontsubset
  * @return {Stream} [description]
@@ -37,16 +43,11 @@ export default function({ text, pattern, formats, presets } = {}) {
     fonts: []
   }
 
-  const PATTERN_DEFAULT = {
-    html : /^.+\.html$/,
-    css  : /^.+\.css$/,
-    font : /^.+\.ttf$/,
-  }
   const PATTERN = { ...PATTERN_DEFAULT, ...pattern }
 
   const FORMATS = formats ? formats : ['ttf']
 
-  const PRESETS = presets ? presets : ['html']
+  const PRESETS = presets ? presets : ['html', 'css']
 
   /**
    * Transform
@@ -58,7 +59,7 @@ export default function({ text, pattern, formats, presets } = {}) {
   function transform(file, encode, callback) {
 
     PRESETS.forEach(preset => {
-      if (PATTERN.html.test(file.path)) {
+      if (PATTERN[preset].test(file.path)) {
         if (typeof preset === 'string') {
           store.text += BUILT_IN_PRESETS[preset](file)
         } else if (typeof preset === 'function') {
