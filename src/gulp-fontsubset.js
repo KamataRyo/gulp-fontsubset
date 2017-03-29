@@ -4,33 +4,30 @@
  */
 
 import through  from 'through2'
-import path     from 'path'
-import html2txt from 'html2txt'
 import Fontmin  from 'fontmin'
-
-/**
- * array filter callback to make it unique
- * @param  {object} x   each element
- * @param  {number} i   index
- * @param  {array} self the array
- * @return {array}      new unique array
- */
-const unique = (x, i, self) => i == self.indexOf(x)
 
 /**
  * wnew csv2json
  * @return {Stream} [description]
  */
-export default function() {
+export default function({ text, pattern, formats } = {}) {
 
-  const EXT = {
-    html: '.html',
-    font: 'ttf',
-  }
+  /**
+   * store processing objects
+   * @type {Object}
+   */
   const store = {
-    texts: [],
+    text: text ? text : '', // store given text string
     fonts: []
   }
+
+  const PATTERN_DEFAULT = {
+    html: /^.+\.html$/,
+    font: /^.+\.ttf$/,
+  }
+  const PATTERN = { ...PATTERN_DEFAULT, ...pattern }
+
+  const FORMATS = formats ? formats : ['ttf']
 
   /**
    * Transform
@@ -41,17 +38,12 @@ export default function() {
    */
   function transform(file, encode, callback) {
 
-    let result
-
-    switch (path.etname(file.path)) {
-      case EXT.html:
-        result = file.clone()
-        result.contents = new Buffer(html2txt(file.contents.toString().filter(unique())))
-        store.texts.push(result)
-        break
-      case EXT.font:
-        store.fonts.push(file)
-        break
+    if (PATTERN.html.test(file.path)) {
+      store.text += file.contents.toString()
+        .replace(/<([^>]+)>/ig, '\n') // strip leftover tags
+        .replace(/\n\s*\n/g, '\n\n')  // collapse multiple newlines
+    } else if (PATTERN.font.test(file.path)) {
+      store.fonts.push(file)
     }
     return callback()
   }
@@ -62,22 +54,28 @@ export default function() {
    * @return {void}
    */
   function flush(callback) {
+    Promise.all(FORMATS.map(format => new Promise((resolve, reject) => {
+      store.fonts.forEach(font => {
+        new Fontmin()
+          .src(font.contents) // input as a buffer
+          .use(Fontmin.glyph({ text: store.text }))
+          .run((err, font) => {
+            if (err) {
+              reject()
+            } else {
+              font.path = store.fonts[0].path
+              this.push(font)
+              resolve()
+            }
+          })
+      })
 
-    let counter = 0
-
-    new Fontmin()
-      .src(store.fonts.map(x => x.contents))
-      .use(Fontmin.glyph({
-        text: store.texts.length > 0 ? store.text.join('').filter(unique()) : ''
-      }))
-      .run((err, files) => files.forEach(x => {
-        this.push(x)
-        if (counter == files.length) {
-          callback()
-        } else {
-          counter++
-        }
-      }))
+    })
+  ))
+    .then(() => {
+      callback()
+    })
+    .catch(err => console.log(err))
   }
 
   return through.obj(transform, flush)
