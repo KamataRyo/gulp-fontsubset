@@ -51,4 +51,4 @@ gulp.task('subset', () => {
 |text|string|`''`|the including texts for subsetting|
 |pattern|object|`{ html: /^.+\.html$/, font: /^.+\.ttf$/ }`|file recognition patterns.|
 |formats|array|`['ttf']`|export formats. Any combinations of `ttf, eot, svg, woff` are avairable.|
-|presets|array|`['html']`|Any combination of string `html, css, fontAwesome` and function|
+|presets|array|`['html', 'css']`|Any combination of string `html, css` and function|

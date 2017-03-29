@@ -121,4 +121,14 @@ describe('gulp-fontsubset', () => {
       .pipe(assert.end(done))
     })
   })
+
+  describe('test of custom presets', () => {
+    it('should be effective', done => {
+      gulp.src([__dirname + '/fixtures/testFont.ttf']) // length = 4584, 10 chars
+        .pipe(subset({ presets: [() => 'a'] })) // 1 char
+        .pipe(assert.length(1))
+        .pipe(assert.first(file => expect(file[0].contents.length).toBeLessThan(4584 - 2500))) // saving 2500 bytes might be reasonable
+        .pipe(assert.end(done))
+    })
+  })
 })

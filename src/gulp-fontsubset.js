@@ -59,12 +59,12 @@ export default function({ text, pattern, formats, presets } = {}) {
   function transform(file, encode, callback) {
 
     PRESETS.forEach(preset => {
-      if (PATTERN[preset].test(file.path)) {
-        if (typeof preset === 'string') {
+      if (typeof preset === 'string') {
+        if (PATTERN[preset] && PATTERN[preset].test(file.path)) {
           store.text += BUILT_IN_PRESETS[preset](file)
-        } else if (typeof preset === 'function') {
-          store.text += preset(file)
         }
+      } else if (typeof preset === 'function') {
+        store.text += preset(file)
       }
     })
 
